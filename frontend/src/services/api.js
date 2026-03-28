@@ -1,9 +1,8 @@
 import axios from 'axios'
 
-// Support for hybrid deployment (Vercel Frontend + Railway Backend)
-const API_URL = import.meta.env.VITE_API_URL || '';
+// In a unified Vercel deployment, the backend is served under /api
 const api = axios.create({
-  baseURL: API_URL ? `${API_URL}/api` : '/api',
+  baseURL: '/api',
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 })

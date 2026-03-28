@@ -85,34 +85,29 @@ const { startHoneypot } = require('./services/honeypotService');
 const { initSocket } = require('./services/socketService');
 const User = require('./models/User');
 
-const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
+module.exports = app;
 
-// Initialize Socket.io
-initSocket(server);
+if (process.env.NODE_ENV !== 'production' && require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  const server = http.createServer(app);
 
-server.listen(PORT, '0.0.0.0', async () => {
-  console.log(`\n🛡️  CipherNest v2 backend running on port ${PORT}`);
-  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  // Initialize Socket.io (Only for local dev)
+  initSocket(server);
 
-  // Check AI connectivity
-  const aiStatus = await checkAIHealth();
-  if (aiStatus.online) {
-    console.log(`🤖 AI Status: ✅ Online (${aiStatus.provider} — ${aiStatus.model})`);
-  } else {
-    console.warn(`⚠️  AI Status: ❌ Offline`);
-    console.warn(`   Set GEMINI_API_KEY or GROQ_API_KEY in .env`);
-    console.warn(`   Gemini (FREE): https://aistudio.google.com/app/apikey`);
-    console.warn(`   Groq (FREE):   https://console.groq.com/keys`);
-  }
+  server.listen(PORT, '0.0.0.0', async () => {
+    console.log(`\n🛡️  CipherNest v2 backend running on port ${PORT}`);
+    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-  // Start Autonomous Resource Guard
-  startResourceGuard();
+    // Check AI connectivity
+    const aiStatus = await checkAIHealth();
+    if (aiStatus.online) {
+      console.log(`🤖 AI Status: ✅ Online (${aiStatus.provider} — ${aiStatus.model})`);
+    }
 
-  // Start Honeypot (linked to first user for alerts)
-  User.findOne().then(user => {
-    if (user) startHoneypot(user._id);
-  }).catch(err => console.error('Honeypot startup error:', err));
-
-  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
-});
+    // Start services only in standalone mode
+    startResourceGuard();
+    User.findOne().then(user => {
+      if (user) startHoneypot(user._id);
+    }).catch(err => console.error('Honeypot startup error:', err));
+  });
+}

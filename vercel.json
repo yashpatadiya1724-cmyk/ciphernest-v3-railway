@@ -1,28 +1,10 @@
 {
   "version": 2,
-  "name": "ciphernest-frontend",
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/frontend/$1" }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "https://your-railway-url.railway.app/api/$1"
-    },
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "https://your-railway-url.railway.app/socket.io/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
-    }
+  "redirects": [
+    { "source": "/login", "destination": "/frontend/login", "permanent": true }
   ]
 }
