@@ -1,10 +1,9 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/(.*)", "destination": "/frontend/$1" }
-  ],
-  "redirects": [
-    { "source": "/login", "destination": "/frontend/login", "permanent": true }
+    { "source": "/assets/(.*)", "destination": "/frontend/dist/assets/$1" },
+    { "source": "/((?!api/).*)", "destination": "/frontend/dist/index.html" }
   ]
 }

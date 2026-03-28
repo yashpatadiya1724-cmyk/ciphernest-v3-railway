@@ -44,8 +44,8 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve built React frontend in production
-const publicDir = path.join(__dirname, 'public');
+// Serve built React frontend if it exists (for local testing/Railway)
+const publicDir = path.join(__dirname, '../frontend/dist');
 app.use(express.static(publicDir));
 
 // Routes
