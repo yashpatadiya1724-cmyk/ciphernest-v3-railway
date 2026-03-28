@@ -32,9 +32,13 @@ const app = express();
 connectDB();
 
 // Middleware — allow any origin in production (Railway handles SSL)
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? true   // allow all origins — frontend is served from same Railway domain
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'];
+// Middleware — allow both dynamic Vercel origins and fixed Railway/local origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  /\.vercel\.app$/ // Matches all Vercel previews/deployments
+];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());

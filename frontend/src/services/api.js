@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-// In dev: Vite proxy handles /api → localhost:5000
-// In prod: served from same Railway domain, /api works directly
+// Support for hybrid deployment (Vercel Frontend + Railway Backend)
+const API_URL = import.meta.env.VITE_API_URL || '';
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_URL ? `${API_URL}/api` : '/api',
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' }
 })

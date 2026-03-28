@@ -12,10 +12,10 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!user) { if (socket) { socket.disconnect(); setSocket(null) } return }
 
-    // In production (Railway), connect to same origin. In dev, connect to localhost:5000
-    const socketUrl = import.meta.env.PROD
+    // Hybrid deployment support: check for VITE_API_URL
+    const socketUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD
       ? window.location.origin
-      : 'http://localhost:5000'
+      : 'http://localhost:5000')
 
     const s = io(socketUrl, {
       transports: ['websocket', 'polling'],
