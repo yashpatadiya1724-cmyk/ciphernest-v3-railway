@@ -1,14 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "npm-9_x"]
+nixPkgs = ["nodejs_20", "npm-10_x"]
 
 [phases.install]
-cmds = [
-  "cd frontend && npm ci --prefer-offline || npm install",
-  "cd backend && npm ci --prefer-offline || npm install"
-]
+cmds = ["npm install"]
 
 [phases.build]
-cmds = ["cd frontend && npm run build"]
+cmds = ["npm run build"]
 
 [start]
-cmd = "cd backend && node server.js"
+cmd = "npm start"

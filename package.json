@@ -1,13 +1,20 @@
 {
   "name": "ciphernest-v2",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "CipherNest — Advanced Cybersecurity Platform",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
-    "start": "cd backend && npm install && node server.js",
+    "install-all": "npm install",
+    "build": "npm run build -w frontend",
+    "start": "npm start -w backend",
+    "dev": "npm run dev -w frontend & npm run dev -w backend",
     "railway": "npm run build && npm start"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   }
 }
