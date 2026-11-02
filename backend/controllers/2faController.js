@@ -1,6 +1,20 @@
-const { authenticator } = require('otplib');
+const otplib = require('otplib');
 const qrcode = require('qrcode');
 const User = require('../models/User');
+
+// Support both otplib v12 and v13 API signatures
+const authenticator = otplib.authenticator || {
+  generateSecret: () => otplib.generateSecret(),
+  keyuri: (user, issuer, secret) => (otplib.generateURI ? otplib.generateURI({ label: user, issuer, secret }) : `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(user)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`),
+  verify: ({ token, secret }) => {
+    try {
+      const res = otplib.verifySync({ token, secret });
+      return Boolean(res && (res.valid === true || res.valid === undefined));
+    } catch {
+      return false;
+    }
+  }
+};
 
 /**
  * @desc Generate 2FA secret and QR code
@@ -59,4 +73,4 @@ const disable2FA = async (req, res) => {
   }
 };
 
-module.exports = { setup2FA, verify2FA, disable2FA };
+module.exports = { setup2FA, verify2FA, disable2FA, authenticator };

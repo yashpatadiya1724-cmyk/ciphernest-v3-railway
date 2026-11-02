@@ -1,0 +1,31 @@
+name: CipherNest Security CI
+
+on:
+  push:
+    branches: [ main, chore/**, feat/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Vault Encryption & 2FA Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package.json
+
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: npm install
+
+      - name: Run Test Suite
+        working-directory: backend
+        run: npm test
