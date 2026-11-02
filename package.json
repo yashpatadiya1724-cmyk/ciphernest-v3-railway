@@ -9,12 +9,12 @@
   ],
   "scripts": {
     "install-all": "npm install",
-    "build": "npm run build -w frontend",
-    "start": "npm start -w backend",
-    "dev": "npm run dev -w frontend & npm run dev -w backend",
+    "build": "cd frontend && npm install && npm run build",
+    "start": "node backend/server.js",
+    "test": "cd backend && npm test",
     "railway": "npm run build && npm start"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=20.0.0"
   }
 }
