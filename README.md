@@ -2,7 +2,9 @@
 
 Mobile-first cybersecurity platform featuring server-side AES encrypted credential storage, 2FA authentication, and web security vulnerability scanners.
 
-[Live Demo](TODO: add live link) | [Docs](docs/DESIGN.md) | [License](LICENSE)
+[Live demo](TODO: owner to add) | [Docs](docs/DESIGN.md) | [License](LICENSE)
+
+![Screenshot](docs/screenshot.png)  <!-- TODO: owner to add -->
 
 ---
 
@@ -17,7 +19,7 @@ Mobile-first cybersecurity platform featuring server-side AES encrypted credenti
 - **Frontend:** React, Vite, Tailwind CSS, Lucide Icons
 - **Backend:** Node.js, Express, Socket.io, CryptoJS, otplib, systeminformation
 - **Database:** MongoDB (Atlas / Mongoose)
-- **Deploy:** Railway, Nixpacks, GitHub Actions CI/CD
+- **Deployment:** Railway, Nixpacks, Vercel, GitHub Actions CI/CD
 
 ## Architecture
 
@@ -44,7 +46,7 @@ flowchart TD
 - Node.js 20+
 - MongoDB instance (local or MongoDB Atlas)
 
-### Installation
+### Setup
 1. Clone the repository:
    ```bash
    git clone https://github.com/yashpatadiya1724-cmyk/ciphernest-v3-railway.git
@@ -59,35 +61,37 @@ flowchart TD
 
 3. Install dependencies:
    ```bash
-   cd backend
-   npm install
+   npm run install:all
    ```
 
-4. Run automated test suite:
+4. Start development server:
    ```bash
-   npm test
+   cd backend && npm run dev
    ```
 
-5. Run development server:
+5. Run tests:
    ```bash
-   npm run dev
+   cd backend && npm test
    ```
 
-## API Endpoints
+## Environment Variables
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/auth/register` | Register new user account |
-| `POST` | `/api/auth/login` | Authenticate user & issue JWT |
-| `GET` | `/api/2fa/setup` | Generate TOTP secret and QR code |
-| `POST` | `/api/2fa/verify` | Validate 6-digit TOTP token and activate 2FA |
-| `GET` | `/api/secrets` | Retrieve user secrets list (sanitized, values not decrypted) |
-| `POST` | `/api/secrets` | Encrypt and store new credential |
-| `POST` | `/api/tools/web-scan` | Perform security header and SSL scan on target URL |
+| Variable | Purpose |
+|---|---|
+| `PORT` | Backend API server listening port (default: `5000`) |
+| `NODE_ENV` | Application environment (`development` / `production`) |
+| `MONGODB_URI` | MongoDB database connection URI string |
+| `JWT_SECRET` | Master key used for JWT signing and server-side AES vault encryption |
+| `AI_PROVIDER` | AI threat advisory provider (`gemini` or `groq`) |
+| `GEMINI_API_KEY` | Google Gemini API key for threat remediation intelligence |
+| `GROQ_API_KEY` | Groq Cloud API key (optional alternative) |
+| `GROQ_MODEL` | Groq model identifier (`llama-3.3-70b-versatile`) |
 
 ## Security and Privacy
-- **Encrypted at Rest:** Credentials in the vault are encrypted using AES before insertion into MongoDB.
-- **Known Limitations (Honest Posture):** This is a **server-side encrypted vault**, not a zero-knowledge architecture. The backend manages the master key; anyone with direct access to server environment variables and the database could theoretically decrypt stored values. Production deployments require secure secret management (e.g., AWS KMS or HashiCorp Vault).
+- **What is Encrypted:** Secret credential values are encrypted using symmetric AES (via CryptoJS) prior to database insertion.
+- **Where Keys Live:** The encryption key resides strictly in server-side memory derived from the `JWT_SECRET` / `ENCRYPTION_KEY` environment variable.
+- **Known Limitations (Honest Posture):** This is a **server-side encrypted vault**, not a client-side zero-knowledge system. The server holds the encryption key to decrypt secrets on authorized requests; anyone with administrative access to server runtime environment variables and database backups could theoretically read stored secrets.
+- **Secrets Logging Policy:** Plaintext secrets, private keys, and user master credentials are never logged, printed to stdout, or exposed in error stack traces.
 
 ## Roadmap
 - [x] Server-side AES encrypted vault
@@ -98,7 +102,10 @@ flowchart TD
 
 ## What I Learned
 - Cybersecurity platforms must maintain absolute honesty about cryptographic boundaries. Calling a server-side encrypted vault "zero-knowledge" misrepresents the threat model.
-- Library version upgrades in security stacks (like otplib v12 to v13) require defensive wrappers to avoid breaking production authentication flows.
+- Managing 2FA compatibility requires defensive multi-version support (supporting both otplib v12 and v13 authenticator exports).
+
+## Author
+Yash Patadiya: [LinkedIn](https://www.linkedin.com/in/yash-patadiya-973161272/)
 
 ## License
 MIT
