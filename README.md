@@ -1,10 +1,13 @@
 # CipherNest v2 (Mobile-Ready Cybersecurity Platform)
 
+[![CipherNest Security CI](https://github.com/yashpatadiya1724-cmyk/ciphernest-v3-railway/actions/workflows/ci.yml/badge.svg)](https://github.com/yashpatadiya1724-cmyk/ciphernest-v3-railway/actions/workflows/ci.yml)
+[![Node 20](https://img.shields.io/badge/Node-20%2B-green.svg)](https://nodejs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-pink.svg)](https://github.com/sponsors/yashpatadiya1724-cmyk)
+
 Mobile-first cybersecurity platform featuring server-side AES encrypted credential storage, 2FA authentication, and web security vulnerability scanners.
 
-[Live demo](TODO: owner to add) | [Docs](docs/DESIGN.md) | [License](LICENSE)
-
-![Screenshot](docs/screenshot.png)  <!-- TODO: owner to add -->
+[Live demo](TODO: owner to add) | [Docs](docs/DESIGN.md) | [Security Policy](docs/SECURITY.md) | [Sponsor](https://github.com/sponsors/yashpatadiya1724-cmyk) | [License](LICENSE)
 
 ---
 
@@ -69,7 +72,7 @@ flowchart TD
    cd backend && npm run dev
    ```
 
-5. Run tests:
+5. Run test suite:
    ```bash
    cd backend && npm test
    ```
@@ -92,6 +95,7 @@ flowchart TD
 - **Where Keys Live:** The encryption key resides strictly in server-side memory derived from the `JWT_SECRET` / `ENCRYPTION_KEY` environment variable.
 - **Known Limitations (Honest Posture):** This is a **server-side encrypted vault**, not a client-side zero-knowledge system. The server holds the encryption key to decrypt secrets on authorized requests; anyone with administrative access to server runtime environment variables and database backups could theoretically read stored secrets.
 - **Secrets Logging Policy:** Plaintext secrets, private keys, and user master credentials are never logged, printed to stdout, or exposed in error stack traces.
+- **Security Policy:** Full disclosure guidelines and vulnerability SLAs are documented in [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Roadmap
 - [x] Server-side AES encrypted vault
