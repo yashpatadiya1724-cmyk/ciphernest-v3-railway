@@ -7,7 +7,7 @@
 
 Mobile-first cybersecurity platform featuring server-side AES encrypted credential storage, 2FA authentication, and web security vulnerability scanners.
 
-[Live demo](TODO: owner to add) | [Docs](docs/DESIGN.md) | [Security Policy](docs/SECURITY.md) | [Sponsor](https://github.com/sponsors/yashpatadiya1724-cmyk) | [License](LICENSE)
+[Docs](docs/DESIGN.md) | [Security Policy](docs/SECURITY.md) | [Sponsor](https://github.com/sponsors/yashpatadiya1724-cmyk) | [License](LICENSE)
 
 ---
 
