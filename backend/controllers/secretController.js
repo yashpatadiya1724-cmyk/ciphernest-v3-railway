@@ -2,7 +2,10 @@ const Secret = require('../models/Secret');
 const CryptoJS = require('crypto-js');
 const { ActivityLog } = require('../models/index');
 
-const ENCRYPTION_KEY = process.env.JWT_SECRET || 'vault_backup_key_2024';
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set');
+}
+const ENCRYPTION_KEY = process.env.JWT_SECRET;
 
 // @desc Add new secret
 const addSecret = async (req, res) => {

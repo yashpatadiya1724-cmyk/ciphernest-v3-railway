@@ -116,6 +116,35 @@ for (const [header, expectedValue] of Object.entries(requiredHeaders)) {
 }
 console.log('✅ HTTP Security Headers: Baseline CSP, HSTS, and X-Content-Type-Options verified');
 
+// 8. SecretController Module Loading & Missing JWT_SECRET Guard Test
+const originalJwtSecret = process.env.JWT_SECRET;
+delete process.env.JWT_SECRET;
+let loadFailedWithoutSecret = false;
+try {
+  delete require.cache[require.resolve('../controllers/secretController')];
+  require('../controllers/secretController');
+} catch (err) {
+  if (err.message === 'JWT_SECRET must be set') {
+    loadFailedWithoutSecret = true;
+  }
+}
+if (!loadFailedWithoutSecret) {
+  throw new Error('Security vulnerability: secretController loaded without JWT_SECRET!');
+}
+console.log('✅ Hardcoded Fallback Guard: secretController threw error when JWT_SECRET was unset');
+
+// Verify it loads cleanly when JWT_SECRET is set
+process.env.JWT_SECRET = MASTER_KEY;
+delete require.cache[require.resolve('../controllers/secretController')];
+require('../controllers/secretController');
+console.log('✅ Module Initialization: secretController loaded cleanly with valid JWT_SECRET');
+
+if (originalJwtSecret !== undefined) {
+  process.env.JWT_SECRET = originalJwtSecret;
+} else {
+  process.env.JWT_SECRET = MASTER_KEY;
+}
+
 console.log('==================================================');
 console.log('🏆 ALL CIPHERNEST SECURITY & 2FA TESTS PASSED (100%)');
 console.log('==================================================');

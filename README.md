@@ -94,6 +94,7 @@ flowchart TD
 - **What is Encrypted:** Secret credential values are encrypted using symmetric AES (via CryptoJS) prior to database insertion.
 - **Where Keys Live:** The encryption key resides strictly in server-side memory derived from the `JWT_SECRET` / `ENCRYPTION_KEY` environment variable.
 - **Known Limitations (Honest Posture):** This is a **server-side encrypted vault**, not a client-side zero-knowledge system. The server holds the encryption key to decrypt secrets on authorized requests; anyone with administrative access to server runtime environment variables and database backups could theoretically read stored secrets.
+  - Server-side encryption with CryptoJS passphrase mode; the key comes from JWT_SECRET (also used to sign JWTs); an earlier version had a hardcoded fallback key that is still in git history. Not zero-knowledge.
 - **Secrets Logging Policy:** Plaintext secrets, private keys, and user master credentials are never logged, printed to stdout, or exposed in error stack traces.
 - **Security Policy:** Full disclosure guidelines and vulnerability SLAs are documented in [docs/SECURITY.md](docs/SECURITY.md).
 
