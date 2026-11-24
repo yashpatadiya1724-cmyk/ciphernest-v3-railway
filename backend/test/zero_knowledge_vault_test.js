@@ -8,6 +8,8 @@ const {
   deriveZeroKnowledgeKey,
   encryptVaultSecret,
   decryptVaultSecret,
+  generateBiometricChallenge,
+  verifyBiometricChallenge,
   validateRailwayEnvironment,
 } = require('../services/zeroKnowledgeVaultService');
 
@@ -90,5 +92,32 @@ const salt2 = crypto.randomBytes(16);
 const keySalt2 = deriveZeroKnowledgeKey(masterPass, biometricToken, salt2);
 assert.notDeepStrictEqual(key1, keySalt2, 'Distinct salts must yield cryptographically distinct derived keys');
 console.log('✅ Salt Entropy Separation verified');
+
+// Test 9: Additional Authenticated Data (AAD) Tenant-Binding
+const tenantAAD = 'tenant:SOU-SILVER-OAK:dept:cybersecurity';
+const aadEncrypted = encryptVaultSecret(secretData, key1, tenantAAD);
+assert.strictEqual(aadEncrypted.aad, tenantAAD);
+const aadDecrypted = decryptVaultSecret(aadEncrypted, key1);
+assert.strictEqual(aadDecrypted, secretData);
+
+// Tampering with tenant AAD context must trigger authentication failure
+assert.throws(() => {
+  decryptVaultSecret({ ...aadEncrypted, aad: 'tenant:ROGUE-HOSPITAL:dept:cybersecurity' }, key1);
+}, /Unsupported state or unable to authenticate data/);
+console.log('✅ Tenant-Bound AAD (Additional Authenticated Data) Verification verified');
+
+// Test 10: Biometric Challenge Freshness & Verification
+const bioChallenge = generateBiometricChallenge();
+assert.strictEqual(typeof bioChallenge.challenge, 'string');
+assert.strictEqual(bioChallenge.challenge.length, 64, 'Challenge must be 256-bit (64 hex characters)');
+assert(verifyBiometricChallenge(bioChallenge), 'Fresh biometric challenge must verify');
+
+// Expired challenge rejection
+const expiredChallenge = { challenge: bioChallenge.challenge, timestamp: Date.now() - 70000 };
+assert.strictEqual(verifyBiometricChallenge(expiredChallenge, 60000), false, 'Expired challenge must be rejected');
+
+// Invalid length challenge rejection
+assert.strictEqual(verifyBiometricChallenge({ challenge: 'short-bad-challenge', timestamp: Date.now() }), false);
+console.log('✅ Biometric PRF Challenge & Freshness Verification verified');
 
 console.log('🏆 ALL CIPHERNEST ZERO-KNOWLEDGE VAULT TESTS PASSED!\n');

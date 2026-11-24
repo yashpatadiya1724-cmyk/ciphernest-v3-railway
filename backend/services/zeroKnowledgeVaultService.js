@@ -28,9 +28,10 @@ function deriveZeroKnowledgeKey(masterSecret, biometricEntropy, salt) {
 }
 
 /**
- * Encrypts sensitive payload using AES-256-GCM authenticated encryption.
+ * Encrypts sensitive payload using AES-256-GCM authenticated encryption
+ * with optional Additional Authenticated Data (AAD) for tenant/context binding.
  */
-function encryptVaultSecret(plaintext, key) {
+function encryptVaultSecret(plaintext, key, aad = null) {
   if (!key || key.length !== 32) {
     throw new Error('Valid 256-bit AES key is required');
   }
@@ -38,6 +39,10 @@ function encryptVaultSecret(plaintext, key) {
   const iv = crypto.randomBytes(12); // Standard 96-bit IV for GCM
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   
+  if (aad) {
+    cipher.setAAD(Buffer.from(String(aad), 'utf8'));
+  }
+
   let encrypted = cipher.update(plaintext, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   const authTag = cipher.getAuthTag();
@@ -46,23 +51,54 @@ function encryptVaultSecret(plaintext, key) {
     ciphertext: encrypted,
     iv: iv.toString('hex'),
     authTag: authTag.toString('hex'),
+    aad: aad ? String(aad) : undefined,
   };
 }
 
 /**
- * Decrypts and authenticates AES-256-GCM ciphertext.
+ * Decrypts and authenticates AES-256-GCM ciphertext, verifying AAD context if provided.
  */
-function decryptVaultSecret({ ciphertext, iv, authTag }, key) {
+function decryptVaultSecret({ ciphertext, iv, authTag, aad }, key) {
   if (!ciphertext || !iv || !authTag) {
     throw new Error('Incomplete encrypted vault payload');
   }
 
   const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
+  
+  if (aad) {
+    decipher.setAAD(Buffer.from(String(aad), 'utf8'));
+  }
+
   decipher.setAuthTag(Buffer.from(authTag, 'hex'));
 
   let decrypted = decipher.update(ciphertext, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
   return decrypted;
+}
+
+/**
+ * Generates cryptographically secure WebAuthn biometric PRF challenge.
+ */
+function generateBiometricChallenge() {
+  const challenge = crypto.randomBytes(32).toString('hex');
+  return {
+    challenge,
+    timestamp: Date.now(),
+  };
+}
+
+/**
+ * Validates biometric challenge freshness and 256-bit entropy.
+ */
+function verifyBiometricChallenge(challengeObj, maxAgeMs = 60000) {
+  if (!challengeObj || !challengeObj.challenge || !challengeObj.timestamp) {
+    return false;
+  }
+  if (typeof challengeObj.challenge !== 'string' || challengeObj.challenge.length !== 64) {
+    return false;
+  }
+  const age = Date.now() - challengeObj.timestamp;
+  return age >= 0 && age <= maxAgeMs;
 }
 
 /**
@@ -86,5 +122,7 @@ module.exports = {
   deriveZeroKnowledgeKey,
   encryptVaultSecret,
   decryptVaultSecret,
+  generateBiometricChallenge,
+  verifyBiometricChallenge,
   validateRailwayEnvironment,
 };
