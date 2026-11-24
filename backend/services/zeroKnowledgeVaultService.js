@@ -183,14 +183,46 @@ function createVaultAuditLog(action, userId, resourceId, status = 'SUCCESS', met
   };
 }
 
+/**
+ * Re-encrypts a vault secret from an old key to a rotated new key atomically.
+ */
+function reencryptVaultSecret(encryptedPayload, oldKey, newKey, newAad = null) {
+  if (!oldKey || !newKey) {
+    throw new Error('Both old and new 256-bit keys are required for secret re-encryption');
+  }
+  const plaintext = decryptVaultSecret(encryptedPayload, oldKey);
+  const targetAad = newAad !== null ? newAad : encryptedPayload.aad;
+  return encryptVaultSecret(plaintext, newKey, targetAad);
+}
+
+/**
+ * Validates the cryptographic integrity and anti-tamper checksum of an audit log entry.
+ */
+function verifyAuditLogIntegrity(auditRecord) {
+  if (!auditRecord || !auditRecord.eventId || !auditRecord.checksum) {
+    return false;
+  }
+  const { eventId, action, userId, resourceId, status, timestamp, checksum } = auditRecord;
+  const canonicalStr = `${eventId}:${action}:${userId}:${resourceId}:${status}:${timestamp}`;
+  const expectedChecksum = crypto.createHash('sha256').update(canonicalStr).digest('hex');
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(checksum, 'hex'), Buffer.from(expectedChecksum, 'hex'));
+  } catch (err) {
+    return false;
+  }
+}
+
 module.exports = {
   deriveZeroKnowledgeKey,
   encryptVaultSecret,
   decryptVaultSecret,
+  reencryptVaultSecret,
   generateBiometricChallenge,
   verifyBiometricChallenge,
   validateRailwayEnvironment,
   createVaultSession,
   verifyVaultSession,
   createVaultAuditLog,
+  verifyAuditLogIntegrity,
 };
