@@ -61,4 +61,34 @@ assert.strictEqual(envConfig.healthy, true);
 assert(envConfig.port > 0);
 console.log(`✅ Railway Deployment Configuration verified (Port: ${envConfig.port}, Node: ${process.version})`);
 
+// Test 5: Input Validation & Key Length Guards
+assert.throws(() => {
+  encryptVaultSecret('plain text', Buffer.from('short-key-16-bytes'));
+}, /Valid 256-bit AES key is required/);
+console.log('✅ Key Length Guard: Non-256-bit key correctly rejected');
+
+// Test 6: Incomplete Vault Payload Rejection
+assert.throws(() => {
+  decryptVaultSecret({ ciphertext: 'abc', iv: 'def' }, key1);
+}, /Incomplete encrypted vault payload/);
+assert.throws(() => {
+  decryptVaultSecret({ iv: 'def', authTag: '123' }, key1);
+}, /Incomplete encrypted vault payload/);
+console.log('✅ Incomplete Vault Payload Guard: Missing IV or AuthTag rejected');
+
+// Test 7: Zero-Knowledge Derivation Input Guards
+assert.throws(() => {
+  deriveZeroKnowledgeKey('', biometricToken, salt);
+}, /Master secret and biometric entropy are required/);
+assert.throws(() => {
+  deriveZeroKnowledgeKey(masterPass, '', salt);
+}, /Master secret and biometric entropy are required/);
+console.log('✅ KDF Input Validation Guard: Empty master pass or biometric entropy rejected');
+
+// Test 8: Salt Entropy Separation
+const salt2 = crypto.randomBytes(16);
+const keySalt2 = deriveZeroKnowledgeKey(masterPass, biometricToken, salt2);
+assert.notDeepStrictEqual(key1, keySalt2, 'Distinct salts must yield cryptographically distinct derived keys');
+console.log('✅ Salt Entropy Separation verified');
+
 console.log('🏆 ALL CIPHERNEST ZERO-KNOWLEDGE VAULT TESTS PASSED!\n');
