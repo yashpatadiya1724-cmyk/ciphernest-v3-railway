@@ -8,12 +8,14 @@ const {
   deriveZeroKnowledgeKey,
   encryptVaultSecret,
   decryptVaultSecret,
+  reencryptVaultSecret,
   generateBiometricChallenge,
   verifyBiometricChallenge,
   validateRailwayEnvironment,
   createVaultSession,
   verifyVaultSession,
   createVaultAuditLog,
+  verifyAuditLogIntegrity,
 } = require('../services/zeroKnowledgeVaultService');
 
 console.log('Running CipherNest Zero-Knowledge Biometric Vault Tests...');
@@ -149,5 +151,27 @@ assert.strictEqual(auditRecord.action, 'VAULT_SECRET_ACCESS');
 assert.strictEqual(auditRecord.status, 'SUCCESS');
 assert.strictEqual(auditRecord.checksum.length, 64, 'SHA-256 checksum must be 64 characters');
 console.log('✅ Tamper-Evident Vault Audit Logging verified');
+
+// Test 13: Secret Re-encryption upon Key Rotation
+const rotatedMasterPass = 'NewRotatedPassphrase#2027';
+const rotatedKey = deriveZeroKnowledgeKey(rotatedMasterPass, biometricToken, salt);
+const reencrypted = reencryptVaultSecret(aadEncrypted, key1, rotatedKey, 'tenant:SOU-SILVER-OAK:dept:cybersecurity-v2');
+assert.strictEqual(reencrypted.aad, 'tenant:SOU-SILVER-OAK:dept:cybersecurity-v2');
+
+// Original key must now fail to decrypt re-encrypted payload
+assert.throws(() => {
+  decryptVaultSecret(reencrypted, key1);
+}, /Unsupported state or unable to authenticate data/);
+
+// Rotated key successfully decrypts with updated AAD context
+const rotatedDecrypted = decryptVaultSecret(reencrypted, rotatedKey);
+assert.strictEqual(rotatedDecrypted, secretData);
+console.log('✅ Vault Secret Re-encryption across Key Rotation lifecycle verified');
+
+// Test 14: Audit Log Integrity Verification
+assert.strictEqual(verifyAuditLogIntegrity(auditRecord), true, 'Valid audit record must verify integrity');
+const tamperedAudit = { ...auditRecord, action: 'UNAUTHORIZED_PRIVILEGE_ESCALATION' };
+assert.strictEqual(verifyAuditLogIntegrity(tamperedAudit), false, 'Tampered audit record must fail integrity check');
+console.log('✅ Cryptographic Audit Log Checksum & Anti-Tamper Verification verified');
 
 console.log('🏆 ALL CIPHERNEST ZERO-KNOWLEDGE VAULT TESTS PASSED!\n');
