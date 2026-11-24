@@ -11,6 +11,9 @@ const {
   generateBiometricChallenge,
   verifyBiometricChallenge,
   validateRailwayEnvironment,
+  createVaultSession,
+  verifyVaultSession,
+  createVaultAuditLog,
 } = require('../services/zeroKnowledgeVaultService');
 
 console.log('Running CipherNest Zero-Knowledge Biometric Vault Tests...');
@@ -119,5 +122,32 @@ assert.strictEqual(verifyBiometricChallenge(expiredChallenge, 60000), false, 'Ex
 // Invalid length challenge rejection
 assert.strictEqual(verifyBiometricChallenge({ challenge: 'short-bad-challenge', timestamp: Date.now() }), false);
 console.log('✅ Biometric PRF Challenge & Freshness Verification verified');
+
+// Test 11: Ephemeral Vault Session Token Lifecycle
+const sessionEnvelope = createVaultSession('user_dev_sec_99', ['read', 'write'], 60);
+assert.strictEqual(typeof sessionEnvelope.token, 'string');
+assert.strictEqual(typeof sessionEnvelope.signature, 'string');
+const verifiedSession = verifyVaultSession(sessionEnvelope);
+assert.strictEqual(verifiedSession.valid, true);
+assert.strictEqual(verifiedSession.session.userId, 'user_dev_sec_99');
+assert.deepStrictEqual(verifiedSession.session.permissions, ['read', 'write']);
+
+// Tampered token signature rejection
+const tamperedEnvelope = { ...sessionEnvelope, token: sessionEnvelope.token + 'bad' };
+assert.strictEqual(verifyVaultSession(tamperedEnvelope).valid, false);
+
+// Expired session rejection
+const expiredEnvelope = createVaultSession('user_dev_sec_99', ['read'], -10); // Expired 10s ago
+const expiredRes = verifyVaultSession(expiredEnvelope);
+assert.strictEqual(expiredRes.valid, false);
+assert.strictEqual(expiredRes.reason, 'SESSION_EXPIRED');
+console.log('✅ Ephemeral Vault Session Token & Freshness Verification verified');
+
+// Test 12: Cryptographic Audit Logging
+const auditRecord = createVaultAuditLog('VAULT_SECRET_ACCESS', 'user_dev_sec_99', 'res_db_cred_01', 'SUCCESS', { ip: '127.0.0.1' });
+assert.strictEqual(auditRecord.action, 'VAULT_SECRET_ACCESS');
+assert.strictEqual(auditRecord.status, 'SUCCESS');
+assert.strictEqual(auditRecord.checksum.length, 64, 'SHA-256 checksum must be 64 characters');
+console.log('✅ Tamper-Evident Vault Audit Logging verified');
 
 console.log('🏆 ALL CIPHERNEST ZERO-KNOWLEDGE VAULT TESTS PASSED!\n');

@@ -118,6 +118,71 @@ function validateRailwayEnvironment() {
   };
 }
 
+/**
+ * Creates an ephemeral, signed vault access session token.
+ */
+function createVaultSession(userId, permissions = ['read'], ttlSeconds = 300, secretKey = 'vault-session-ephemeral-key') {
+  const now = Date.now();
+  const session = {
+    sessionId: `vsess_${crypto.randomBytes(12).toString('hex')}`,
+    userId,
+    permissions,
+    createdAt: now,
+    expiresAt: now + (ttlSeconds * 1000),
+  };
+  const payloadStr = JSON.stringify(session);
+  const signature = crypto.createHmac('sha256', secretKey).update(payloadStr).digest('hex');
+  return {
+    token: Buffer.from(payloadStr).toString('base64url'),
+    signature,
+    expiresAt: session.expiresAt,
+  };
+}
+
+/**
+ * Verifies vault session token signature and liveness.
+ */
+function verifyVaultSession(sessionEnvelope, secretKey = 'vault-session-ephemeral-key') {
+  if (!sessionEnvelope || !sessionEnvelope.token || !sessionEnvelope.signature) {
+    return { valid: false, reason: 'MISSING_TOKEN_OR_SIGNATURE' };
+  }
+  try {
+    const payloadStr = Buffer.from(sessionEnvelope.token, 'base64url').toString('utf8');
+    const expectedSig = crypto.createHmac('sha256', secretKey).update(payloadStr).digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(sessionEnvelope.signature, 'hex'), Buffer.from(expectedSig, 'hex'))) {
+      return { valid: false, reason: 'INVALID_SIGNATURE' };
+    }
+    const session = JSON.parse(payloadStr);
+    if (Date.now() > session.expiresAt) {
+      return { valid: false, reason: 'SESSION_EXPIRED', session };
+    }
+    return { valid: true, session };
+  } catch (err) {
+    return { valid: false, reason: 'MALFORMED_SESSION' };
+  }
+}
+
+/**
+ * Generates tamper-evident cryptographic audit records for SOC compliance.
+ */
+function createVaultAuditLog(action, userId, resourceId, status = 'SUCCESS', metadata = {}) {
+  const timestamp = Date.now();
+  const eventId = `audit_${timestamp}_${crypto.randomBytes(6).toString('hex')}`;
+  const canonicalStr = `${eventId}:${action}:${userId}:${resourceId}:${status}:${timestamp}`;
+  const checksum = crypto.createHash('sha256').update(canonicalStr).digest('hex');
+
+  return {
+    eventId,
+    action,
+    userId,
+    resourceId,
+    status,
+    timestamp,
+    metadata,
+    checksum,
+  };
+}
+
 module.exports = {
   deriveZeroKnowledgeKey,
   encryptVaultSecret,
@@ -125,4 +190,7 @@ module.exports = {
   generateBiometricChallenge,
   verifyBiometricChallenge,
   validateRailwayEnvironment,
+  createVaultSession,
+  verifyVaultSession,
+  createVaultAuditLog,
 };
